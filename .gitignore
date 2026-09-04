@@ -1,0 +1,11 @@
+*.jpg
+
+.env
+.env.*
+!.env.example
+
+.venv/
+_pycache_/
+
+*.py[cod]
+.paddlex/
