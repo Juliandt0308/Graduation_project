@@ -84,13 +84,14 @@ def recognize(file: UploadFile):
         ) from error
 
     lines = []
+    low_confidence = {}
 
     for result in results:
         data = result.json["res"]
         texts = data["rec_texts"]
         scores = data["rec_scores"]
 
-        for (text, score) in zip(texts, scores):
+        for number, (text, score) in enumerate(zip(texts, scores), start=1):
             cleaned_text = text.strip()
             if cleaned_text:
                 lines.append(
@@ -99,6 +100,8 @@ def recognize(file: UploadFile):
                         "confidence": round(float(score), 4),
                     }
                 )
+                if score < 0.8:
+                    low_confidence[number] = score
 
     extracted_text = " ".join(
         line["text"] for line in lines
@@ -118,6 +121,7 @@ def recognize(file: UploadFile):
         "contentType": file.content_type,
         "extractedText": extracted_text,
         "averageConfidence": average_confidence,
+        "lowConfidence": low_confidence,
         "lines": lines,
     }
 
@@ -144,6 +148,10 @@ Rules:
 - Never rewrite "as" as "because" or "due to".
 - Each search term must contain at least one distinctive phrase, number,
   named entity, or subject found in the corrected text.
+- Do not include removed account names, watermarks, publishers, or category labels in search terms.
+- Do not generalize a specific incident into a broader social trend.
+- Each search term should contain at least two distinctive elements from the claim,
+  such as a person, location, event, amount, percentage, or policy.
 """.strip()
 
 @app.post("/analyze-text", response_model=TextAnalysis)
@@ -178,3 +186,16 @@ def analyze_text(request: AnalyzeTextRequest):
             status_code=502,
             detail=f"OpenAI analysis failed: {error}",
         ) from error
+
+@app.post("/analyze")
+def analyze(file: UploadFile):
+    ocr_result = recognize(file)
+    request = AnalyzeTextRequest(
+        text=ocr_result["extractedText"]
+    )
+    analysis_result = analyze_text(request)
+
+    return {
+        "ocr" : ocr_result,
+        "analysis" : analysis_result,
+    }
