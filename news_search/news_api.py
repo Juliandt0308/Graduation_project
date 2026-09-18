@@ -14,6 +14,11 @@ target_domains = [
     "reuters.com",
     "apnews.com",
     "theguardian.com",
+    "telegraph.co.uk",
+    "thetimes.com",
+    "independent.co.uk",
+    "economist.com",
+    "ft.com",
 ]
 
 def search_news(search_terms: list[str]) -> list[dict]:
@@ -25,9 +30,8 @@ def search_news(search_terms: list[str]) -> list[dict]:
             "X-Api-Key" : api_key,
         },
         params={
-            "q": '"borrowing costs" AND UK',
-            "searchIn": "title,description",
-            "languate" : "en",
+            "q": query,
+            "language" : "en",
             "domains" : ",".join(target_domains),
             "sortBy" : "relevancy",
             "pageSize": 20,
@@ -56,6 +60,12 @@ def search_news(search_terms: list[str]) -> list[dict]:
     return cleaned_articles
 
 if __name__ == "__main__":
-    result = search_news(["borrowing costs", "UK"])
+    result = search_news(
+        [
+            "Trump Israel bombs",
+            "Trump Israel weapons sale",
+            "US Israel munitions"
+        ]
+    )
     for r in result:
         print(r)

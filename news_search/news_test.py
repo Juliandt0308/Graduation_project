@@ -37,7 +37,7 @@ response = requests.get(
     params={
         "q": '"borrowing costs" AND UK',
         "searchIn": "title,description",
-        "languate" : "en",
+        "language" : "en",
         "domains" : ",".join(target_domains),
         "sortBy" : "relevancy",
         "pageSize": 20,

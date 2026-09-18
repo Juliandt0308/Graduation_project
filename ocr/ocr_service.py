@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 
-from fastapi import FastAPI, HTTPException, UploadFile
+from fastapi import HTTPException, UploadFile
 from paddleocr import PaddleOCR
 from pydantic import BaseModel
 from dotenv import load_dotenv
@@ -9,11 +9,6 @@ from openai import OpenAI
 
 load_dotenv()
 client = OpenAI()
-
-app = FastAPI(
-    title="Card News OCR API",
-    version="0.1.0",
-)
 
 ocr = PaddleOCR(
     lang="en",
@@ -32,13 +27,6 @@ class TextAnalysis(BaseModel):
     claim : str
     search_terms : list[str]
 
-@app.get("/health")
-def health():
-    return{
-        "status" : "ok"
-    }
-
-@app.post("/ocr")
 def recognize(file: UploadFile):
     allowed_types = {
         "image/jpeg",
@@ -101,7 +89,7 @@ def recognize(file: UploadFile):
                     }
                 )
                 if score < 0.8:
-                    low_confidence[number] = score
+                    low_confidence[number] = round(float(score), 4)
 
     extracted_text = " ".join(
         line["text"] for line in lines
@@ -137,7 +125,7 @@ Rules:
 - Preserve the original causal wording and level of certainty.
 - Do not strengthen or weaken the original claim.
 - Extract exactly one central claim.
-- Generate 2 to 4 specific English news search terms.
+- Generate 2 to 4 short English news search terms.
 - Search terms may rephrase concepts from the source, but must not add
   years, dates, locations, organizations, people, or quantities that are
   not in the original OCR text.
@@ -145,16 +133,11 @@ Rules:
 - Avoid broad terms such as "job market trends".
 - Extract the claim using wording from the corrected text as closely as possible.
 - Prefer copying the central claim verbatim instead of paraphrasing it.
-- Never rewrite "as" as "because" or "due to".
-- Each search term must contain at least one distinctive phrase, number,
-  named entity, or subject found in the corrected text.
-- Do not include removed account names, watermarks, publishers, or category labels in search terms.
-- Do not generalize a specific incident into a broader social trend.
-- Each search term should contain at least two distinctive elements from the claim,
-  such as a person, location, event, amount, percentage, or policy.
+- Include the main people, countries, or organizations.
+- Prefer common journalistic synonyms.
+- Avoid editorial wording from the social-media post.
 """.strip()
 
-@app.post("/analyze-text", response_model=TextAnalysis)
 def analyze_text(request: AnalyzeTextRequest):
     if not request.text.strip():
         raise HTTPException(
@@ -186,16 +169,3 @@ def analyze_text(request: AnalyzeTextRequest):
             status_code=502,
             detail=f"OpenAI analysis failed: {error}",
         ) from error
-
-@app.post("/analyze")
-def analyze(file: UploadFile):
-    ocr_result = recognize(file)
-    request = AnalyzeTextRequest(
-        text=ocr_result["extractedText"]
-    )
-    analysis_result = analyze_text(request)
-
-    return {
-        "ocr" : ocr_result,
-        "analysis" : analysis_result,
-    }
