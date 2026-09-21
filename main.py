@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 
 from ocr.ocr_service import recognize, analyze_text, AnalyzeTextRequest, TextAnalysis
 from news_search.news_api import search_news
@@ -7,6 +8,17 @@ from classification.classify import classify_articles
 app = FastAPI(
     title="Card News OCR API",
     version="0.1.0",
+)
+
+# CORS for connecting ports
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 @app.get("/health")
@@ -25,7 +37,10 @@ def analyze(file: UploadFile):
 
     analysis_result = analyze_text(request)
 
-    cleaned_articles = search_news(analysis_result.search_terms)
+    cleaned_articles = search_news(
+        analysis_result.required_search_terms,
+        analysis_result.optional_search_terms,
+    )
 
     classified = classify_articles(
         found_articles=cleaned_articles,
@@ -34,6 +49,7 @@ def analyze(file: UploadFile):
 
     stance_counts = {
         "support" : 0,
+        "partially_support" : 0,
         "contradict" : 0,
         "neutral" : 0,
         "unclear" : 0,
