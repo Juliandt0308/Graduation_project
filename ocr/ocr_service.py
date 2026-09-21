@@ -25,7 +25,8 @@ class AnalyzeTextRequest(BaseModel):
 class TextAnalysis(BaseModel):
     corrected_text : str
     claim : str
-    search_terms : list[str]
+    required_search_terms: list[str]
+    optional_search_terms: list[str]
 
 def recognize(file: UploadFile):
     allowed_types = {
@@ -136,6 +137,17 @@ Rules:
 - Include the main people, countries, or organizations.
 - Prefer common journalistic synonyms.
 - Avoid editorial wording from the social-media post.
+- Generate 1 to 3 required search terms containing only the main
+  people, countries, or organizations.
+- Generate 2 to 4 optional search terms containing common journalistic
+  keywords for the central topic.
+- Do not write search terms as sentences.
+- Do not include claim verbs such as sends, causes, replaces, or claims.
+- Prefer synonyms commonly used in news headlines.
+- Use concrete nouns from the claim and common headline synonyms.
+- Do not use broad interpretations such as military aid,
+  defense spending, political controversy, or economic impact.
+- Include the claim's central object as one optional search term.
 """.strip()
 
 def analyze_text(request: AnalyzeTextRequest):

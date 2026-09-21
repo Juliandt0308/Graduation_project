@@ -12,6 +12,7 @@ class ArticleClassification(BaseModel):
     relevance: Literal["relevant", "unrelated"]
     stance: Literal[
         "support",
+        "partially_support",
         "contradict",
         "neutral",
         "unclear",
@@ -32,7 +33,8 @@ Labels:
 - unrelated: It only shares broad keywords or discusses another issue.
 
 - support: It explicitly supports the claim's main conclusion.
-- contradict: It explicitly conflicts with the main conclusion.
+- partially_support: It supports the claim but the detailed figure is not mentioned.
+- contradict: It explicitly conflicts with the main conclusion or debunks the claim's figures.
 - neutral: It discusses the claim's subject without supporting or
   contradicting the main conclusion.
 - unclear: It is relevant, but there is not enough information.
@@ -51,6 +53,19 @@ Rules:
 - If relevance is unrelated, stance must be not_applicable.
 - Confidence must be between 0 and 1.
 - Give one short reason.
+- Decide relevance first, independently from stance.
+- An article is relevant if it covers the same event, proposal, transaction,
+  or controversy involving the same main actors and subject.
+- Missing quantities, costs, causes, or other details does not make an
+  otherwise relevant article unrelated.
+- An article reporting opposition or reactions to the same event is still relevant.
+- If an article confirms only part of the claim or omits important details,
+  classify it as relevant and neutral.
+- Use unclear only when the title and description are too vague to determine
+  the article's relationship to the claim.
+- Use contradict only when the article explicitly states information that
+  conflicts with the claim. Opposition to a policy is not contradiction of
+  the factual claim that the policy was proposed.
 """.strip()
 
 def classify_articles(found_articles: list[dict], claim: str) -> ClassificationResult:

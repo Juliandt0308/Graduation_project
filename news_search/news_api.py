@@ -21,8 +21,40 @@ target_domains = [
     "ft.com",
 ]
 
-def search_news(search_terms: list[str]) -> list[dict]:
-    query = " OR ".join(search_terms[:3])
+def term_maker(term : str) -> str:
+    term = term.strip()
+
+    if " " in term:
+        return f'"{term}"'
+
+    return term
+
+def search_news(
+    required_search_terms: list[str], 
+    optional_search_terms: list[str],
+    ) -> list[dict]:
+    
+    required_terms = [
+        term_maker(term)
+        for term in required_search_terms
+        if term.strip()
+    ]
+
+    optional_terms = [
+        term_maker(term)
+        for term in optional_search_terms
+        if term.strip()
+    ]
+
+    if not required_terms:
+        raise ValueError("At least one required search term is needed")
+    required_query = " AND ".join(required_terms)
+
+    if optional_terms:
+        optional_query = " OR ".join(optional_terms)
+        query = f"({required_query}) AND ({optional_query})"
+    else:
+        query = required_query
 
     response = requests.get(
         "https://newsapi.org/v2/everything",
@@ -34,7 +66,7 @@ def search_news(search_terms: list[str]) -> list[dict]:
             "language" : "en",
             "domains" : ",".join(target_domains),
             "sortBy" : "relevancy",
-            "pageSize": 20,
+            "pageSize": 30,
         },
         timeout=10,
     )
@@ -42,6 +74,27 @@ def search_news(search_terms: list[str]) -> list[dict]:
     response.raise_for_status()
 
     articles = response.json().get("articles", [])
+
+    if not articles:
+        fallback_query = required_query
+        response = requests.get(
+            "https://newsapi.org/v2/everything",
+            headers={
+                "X-Api-Key" : api_key,
+            },
+            params={
+                "q": fallback_query,
+                "language" : "en",
+                "domains" : ",".join(target_domains),
+                "sortBy" : "relevancy",
+                "pageSize": 50,
+            },
+            timeout=10,
+        )
+
+        response.raise_for_status()
+
+        articles = response.json().get("articles", [])
 
     cleaned_articles = []
 
@@ -61,11 +114,17 @@ def search_news(search_terms: list[str]) -> list[dict]:
 
 if __name__ == "__main__":
     result = search_news(
-        [
-            "Trump Israel bombs",
-            "Trump Israel weapons sale",
-            "US Israel munitions"
-        ]
+        required_search_terms=[
+            "Trump",
+            "Israel",
+        ],
+        optional_search_terms=[
+            "bombs",
+            "weapons",
+            "munitions",
+            "weapons sale",
+        ],
     )
-    for r in result:
-        print(r)
+
+    for article in result:
+        print(article)
