@@ -1,16 +1,27 @@
 const stanceLabels = {
-  support: "지지",
-  partially_support: "부분 지지",
-  contradict: "반박",
-  neutral: "중립",
-  unclear: "불명확",
-  not_applicable: "무관 기사",
+  support: "Supports",
+  partially_support: "Partially supports",
+  contradict: "Contradicts",
+  neutral: "Neutral",
+  unclear: "Unclear",
+  not_applicable: "Unrelated",
 };
 
 function StanceSummary({ counts }) {
+  const total = Object.values(counts).reduce(
+    (sum, count) => sum + count,
+    0
+  );
+
   return (
-    <section className="result-section">
-      <h2>기사 분류 결과</h2>
+    <section className="result-section stance-summary">
+      <div className="section-heading">
+        <div>
+          <span className="section-kicker">DISTRIBUTION</span>
+          <h2>Article classification</h2>
+        </div>
+        <span className="result-total">Total: {total}</span>
+      </div>
 
       <div className="stance-list">
         {Object.entries(counts).map(

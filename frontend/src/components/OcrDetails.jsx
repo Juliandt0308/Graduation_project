@@ -9,38 +9,38 @@ function OcrDetails({ ocr }) {
 
   return (
     <details className="result-section ocr-details">
-      <summary>OCR 상세 결과</summary>
+      <summary>OCR details</summary>
 
       <div className="ocr-summary">
         <p>
-          <strong>파일명:</strong>{" "}
+          <strong>Filename:</strong>{" "}
           {ocr.filename}
         </p>
 
         <p>
-          <strong>파일 형식:</strong>{" "}
+          <strong>File type:</strong>{" "}
           {ocr.contentType}
         </p>
 
         <p>
-          <strong>평균 OCR 신뢰도:</strong>{" "}
+          <strong>Average OCR confidence:</strong>{" "}
           {formatConfidence(ocr.averageConfidence)}
         </p>
 
         <p>
-          <strong>낮은 신뢰도 문장:</strong>{" "}
-          {lowConfidenceCount}개
+          <strong>Low-confidence lines:</strong>{" "}
+          {lowConfidenceCount}
         </p>
       </div>
 
       <div className="ocr-text">
-        <h3>추출된 전체 텍스트</h3>
+        <h3>Full extracted text</h3>
 
         <p>{ocr.extractedText}</p>
       </div>
 
       <div className="ocr-lines">
-        <h3>인식된 문장</h3>
+        <h3>Detected lines</h3>
 
         <ol>
           {ocr.lines.map((line, index) => {
@@ -66,7 +66,7 @@ function OcrDetails({ ocr }) {
 
                 {isLowConfidence && (
                   <span className="confidence-warning">
-                    낮은 신뢰도
+                    Low confidence
                   </span>
                 )}
               </li>
