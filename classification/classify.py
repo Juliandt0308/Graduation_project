@@ -32,40 +32,72 @@ Labels:
 - relevant: The article directly addresses the claim or its subject.
 - unrelated: It only shares broad keywords or discusses another issue.
 
-- support: It explicitly supports the claim's main conclusion.
-- partially_support: It supports the claim but the detailed figure is not mentioned.
-- contradict: It explicitly conflicts with the main conclusion or debunks the claim's figures.
-- neutral: It discusses the claim's subject without supporting or
-  contradicting the main conclusion.
-- unclear: It is relevant, but there is not enough information.
-- not_applicable: Use when relevance is unrelated.
+- support: The supplied article text explicitly supports every essential
+  proposition in the complete claim.
+
+- partially_support: The supplied article text explicitly supports at least
+  one essential proposition, but does not support every essential
+  proposition or omits an important qualification.
+
+- contradict: The supplied article text explicitly conflicts with an
+  essential proposition in the claim.
+
+- neutral: The article addresses the same event or relationship, but the
+  supplied text neither supports nor contradicts any essential proposition.
+
+- unclear: The supplied text is too limited or ambiguous to determine its
+  relationship to the claim.
 
 Rules:
 
 - Evaluate the complete claim, including its conclusion, causality,
   quantities, and qualifications.
 - Confirming only one premise is not support.
-- If a claim says X causes Y and an article only says X occurred,
-  classify it as relevant and neutral.
-- Use only the supplied title and description.
+- Use neutral when the article discusses the same subject or event but
+  neither confirms nor disputes the claim's central conclusion.
+- Use only the supplied title, description, and content excerpt.
 - Do not infer missing article content.
 - Preserve every article id and classify each article exactly once.
 - If relevance is unrelated, stance must be not_applicable.
 - Confidence must be between 0 and 1.
 - Give one short reason.
 - Decide relevance first, independently from stance.
-- An article is relevant if it covers the same event, proposal, transaction,
-  or controversy involving the same main actors and subject.
 - Missing quantities, costs, causes, or other details does not make an
   otherwise relevant article unrelated.
 - An article reporting opposition or reactions to the same event is still relevant.
-- If an article confirms only part of the claim or omits important details,
-  classify it as relevant and neutral.
-- Use unclear only when the title and description are too vague to determine
+- Use unclear only when the title, description, and the contents are too vague to determine
   the article's relationship to the claim.
 - Use contradict only when the article explicitly states information that
   conflicts with the claim. Opposition to a policy is not contradiction of
   the factual claim that the policy was proposed.
+- Matching people, organizations, locations, or broad topics alone is not
+  sufficient for relevance.
+- An article is relevant only when its supplied text explicitly addresses
+  the central action, event, relationship, comparison, or state asserted
+  by the claim.
+- Do not infer support from circumstantial events.
+  An event that could plausibly cause the claim is not evidence that the
+  claim occurred.
+- Support requires explicit textual evidence for the claim's central
+  conclusion.
+- Partially support requires explicit evidence for the central conclusion,
+  while omitting or qualifying a secondary detail.
+- If the article covers the same general subject but does not evaluate or
+  report the asserted action, relationship, comparison, or state, classify
+  it as unrelated.
+- Base the decision only on the supplied article text. Do not fill missing
+  connections with background knowledge or speculation.
+- Before assigning a stance, divide the central claim into its essential
+  propositions.
+- Use support only when the supplied article text explicitly supports every
+  essential proposition.
+- Use partially_support when the supplied text explicitly supports at least
+  one essential proposition but does not support all of them.
+- Do not treat related political circumstances, positive or negative mood,
+  or plausible consequences as evidence for a missing proposition.
+- In the reason, state which propositions are supported and which are
+  missing. Never claim that a proposition is supported unless the supplied
+  text explicitly provides that evidence.
 """.strip()
 
 def classify_articles(found_articles: list[dict], claim: str) -> ClassificationResult:
@@ -78,6 +110,7 @@ def classify_articles(found_articles: list[dict], claim: str) -> ClassificationR
             "source": article["source"],
             "description": article["description"],
             "title": article["title"],
+            "content": article.get("content") or "",
         }
         for article in found_articles
     ]
@@ -88,7 +121,7 @@ def classify_articles(found_articles: list[dict], claim: str) -> ClassificationR
     }
 
     response = client.responses.parse(
-        model="gpt-4o-mini",
+        model="gpt-4.1-mini",
         input=[
             {
                 "role":"system",

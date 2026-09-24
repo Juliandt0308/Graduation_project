@@ -38,8 +38,9 @@ def analyze(file: UploadFile):
     analysis_result = analyze_text(request)
 
     cleaned_articles = search_news(
-        analysis_result.required_search_terms,
-        analysis_result.optional_search_terms,
+        analysis_result.primary_anchor_terms,
+        analysis_result.secondary_anchor_terms,
+        analysis_result.event_terms,
     )
 
     classified = classify_articles(

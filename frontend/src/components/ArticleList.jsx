@@ -10,7 +10,7 @@ function ArticleList({
         <div className="section-heading">
           <div>
             <span className="section-kicker">SOURCES</span>
-            <h2>Related coverage</h2>
+            <h2>Retrieved articles</h2>
           </div>
           <span className="result-total">0 articles</span>
         </div>
@@ -24,7 +24,7 @@ function ArticleList({
       <div className="section-heading">
         <div>
           <span className="section-kicker">SOURCES</span>
-          <h2>Related coverage</h2>
+          <h2>Retrieved articles</h2>
         </div>
         <span className="result-total">
           {articles.length} {articles.length === 1 ? "article" : "articles"}

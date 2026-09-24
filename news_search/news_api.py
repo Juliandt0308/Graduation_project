@@ -11,14 +11,28 @@ api_key = os.getenv("NEWS_API_KEY")
 
 target_domains = [
     "bbc.co.uk",
-    "reuters.com",
-    "apnews.com",
     "theguardian.com",
-    "telegraph.co.uk",
-    "thetimes.com",
+    "thesun.co.uk",
+    "mirror.co.uk",
     "independent.co.uk",
+    "dailymail.co.uk",
+    "itv.com",
+    "express.co.uk",
+    "news.sky.com",
+    "telegraph.co.uk",
+    "metro.co.uk",
+    "thetimes.com",
+    "manchestereveningnews.co.uk",
+    "standard.co.uk",
+    "channel4.com",
+    "dailystar.co.uk",
+    "inews.co.uk",
+    "dailyrecord.co.uk",
+    "walesonline.co.uk",
+    "gbnews.com",
     "economist.com",
     "ft.com",
+    "reuters.com",
 ]
 
 def term_maker(term : str) -> str:
@@ -30,31 +44,44 @@ def term_maker(term : str) -> str:
     return term
 
 def search_news(
-    required_search_terms: list[str], 
-    optional_search_terms: list[str],
+    primary_anchor_terms: list[str], 
+    secondary_anchor_terms: list[str], 
+    event_terms: list[str],
     ) -> list[dict]:
     
-    required_terms = [
+    primary_terms = [
         term_maker(term)
-        for term in required_search_terms
+        for term in primary_anchor_terms
+        if term.strip()
+    ]
+
+    secondary_terms = [
+        term_maker(term)
+        for term in secondary_anchor_terms
         if term.strip()
     ]
 
     optional_terms = [
         term_maker(term)
-        for term in optional_search_terms
+        for term in event_terms
         if term.strip()
     ]
 
-    if not required_terms:
+    if not primary_terms:
         raise ValueError("At least one required search term is needed")
-    required_query = " AND ".join(required_terms)
+    primary_query = " AND ".join(primary_terms)
+
+    if secondary_terms:
+        secondary_query = " OR ".join(secondary_terms)
+        temp_query = f"({primary_query}) AND ({secondary_query})"
+    else:
+        temp_query = primary_query
 
     if optional_terms:
         optional_query = " OR ".join(optional_terms)
-        query = f"({required_query}) AND ({optional_query})"
+        query = f"({temp_query}) AND ({optional_query})"
     else:
-        query = required_query
+        query = temp_query
 
     response = requests.get(
         "https://newsapi.org/v2/everything",
@@ -74,9 +101,12 @@ def search_news(
     response.raise_for_status()
 
     articles = response.json().get("articles", [])
+    fallback_articles = []
 
+    # Fallback
     if not articles:
-        fallback_query = required_query
+        fallback_query = f"({primary_query}) AND ({optional_query})"
+
         response = requests.get(
             "https://newsapi.org/v2/everything",
             headers={
@@ -94,31 +124,34 @@ def search_news(
 
         response.raise_for_status()
 
-        articles = response.json().get("articles", [])
+        fallback_articles = response.json().get("articles", [])
 
     cleaned_articles = []
+    seen_urls = set()
 
-    for index, article in enumerate(articles):
-        cleaned_articles.append(
-            {
-                "id": index,
-                "source": article["source"]["name"],
-                "title": article["title"],
-                "description": article["description"],
-                "url": article["url"],
-                "publishedAt": article["publishedAt"],
-            }
-        )
+    for index, article in enumerate(articles + fallback_articles):
+        url = article.get("url")
+        if url and url not in seen_urls:
+            cleaned_articles.append(
+                {
+                    "id": index,
+                    "source": article["source"]["name"],
+                    "title": article["title"],
+                    "description": article["description"],
+                    "content": article["content"],
+                    "url": article["url"],
+                    "publishedAt": article["publishedAt"],
+                }
+            )
+            seen_urls.add(url)
     
     return cleaned_articles
 
 if __name__ == "__main__":
     result = search_news(
-        required_search_terms=[
-            "Trump",
-            "Israel",
-        ],
-        optional_search_terms=[
+        primary_anchor_terms=["Trump"],
+        secondary_anchor_terms=["Israel"],
+        event_terms=[
             "bombs",
             "weapons",
             "munitions",

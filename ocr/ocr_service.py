@@ -25,8 +25,11 @@ class AnalyzeTextRequest(BaseModel):
 class TextAnalysis(BaseModel):
     corrected_text : str
     claim : str
-    required_search_terms: list[str]
-    optional_search_terms: list[str]
+    primary_anchor_terms: list[str]
+    secondary_anchor_terms: list[str]
+    event_terms: list[str]
+    key_figures: list[str]
+    source_hints: list[str]
 
 def recognize(file: UploadFile):
     allowed_types = {
@@ -92,7 +95,7 @@ def recognize(file: UploadFile):
                 if score < 0.8:
                     low_confidence[number] = round(float(score), 4)
 
-    extracted_text = " ".join(
+    extracted_text = "\n".join(
         line["text"] for line in lines
     )
 
@@ -126,28 +129,63 @@ Rules:
 - Preserve the original causal wording and level of certainty.
 - Do not strengthen or weaken the original claim.
 - Extract exactly one central claim.
-- Generate 2 to 4 short English news search terms.
 - Search terms may rephrase concepts from the source, but must not add
   years, dates, locations, organizations, people, or quantities that are
   not in the original OCR text.
-- If the source does not contain a year, do not include a year.
-- Avoid broad terms such as "job market trends".
 - Extract the claim using wording from the corrected text as closely as possible.
 - Prefer copying the central claim verbatim instead of paraphrasing it.
 - Include the main people, countries, or organizations.
 - Prefer common journalistic synonyms.
 - Avoid editorial wording from the social-media post.
-- Generate 1 to 3 required search terms containing only the main
-  people, countries, or organizations.
-- Generate 2 to 4 optional search terms containing common journalistic
-  keywords for the central topic.
+- Generate exactly one primary anchor term.
+- Choose as the primary anchor the subject whose action, event, or state is
+  the central assertion of the claim's main clause.
+- Treat entities used for comparison, background, location, attribution, or
+  a subordinate clause as secondary anchors unless they are the main subject.
+- For named people, organizations, political parties, countries, and
+  locations, copy the entity wording from the corrected text exactly.
+- Do not expand, normalize, rename, or add descriptors to a named entity.
+- Do not add words such as Party, Government, UK, US, Group, or Organization
+  unless they are part of that entity in the corrected text.
+- Do not combine a named entity with an event word to create a primary
+  anchor phrase.
+- Use a concrete topic phrase as a primary anchor only when no named entity
+  adequately identifies the subject.
+- Each primary anchor term must be independently likely to appear in a news
+  headline or article.
+- Put other people, organizations, countries, locations, or objects that
+  improve precision but may be omitted from a headline into
+  secondary_anchor_terms.
+- Do not place the same concept in both primary_anchor_terms and
+  secondary_anchor_terms.
+- Generate 2 to 6 event terms as short retrieval keywords or established
+  news-topic phrases.
+- Event terms must identify the central topic while remaining useful across
+  different journalistic wordings of the same event.
+- Include at least one core topic noun taken directly from the corrected
+  text, and add common journalistic synonyms as separate terms.
+- Do not use complete claims, clauses, conclusions, or source-specific
+  wording as event terms.
+- Do not repeat primary or secondary anchor terms as event terms.
+- Do not use generic attribution words such as claim, statement, says, or
+  announcement unless making the statement is itself the central event.
 - Do not write search terms as sentences.
-- Do not include claim verbs such as sends, causes, replaces, or claims.
 - Prefer synonyms commonly used in news headlines.
 - Use concrete nouns from the claim and common headline synonyms.
-- Do not use broad interpretations such as military aid,
-  defense spending, political controversy, or economic impact.
-- Include the claim's central object as one optional search term.
+- Put important figures(for example, 2%, 30 times, £1,000,000) related to the claim into key_figures.
+- Restore missing spaces between concatenated English words when the
+  intended word boundaries are clear from grammar and context.
+- Prefer inserting spaces over changing, deleting, or replacing recognised
+  characters.
+- Treat a short isolated all-caps token before the headline as a possible
+  publisher logo or account label. Exclude it unless it is grammatically
+  necessary to the headline.
+- Treat lines beginning with "Source" as attribution, not as part of the
+  corrected text or central claim.
+- A short isolated token on a separate line before the headline is usually
+  a publisher logo. Never include it in the claim or anchor terms unless it
+  forms a grammatical part of the headline.
+- Do not concatenate a publisher label with the first headline line.
 """.strip()
 
 def analyze_text(request: AnalyzeTextRequest):
@@ -158,7 +196,7 @@ def analyze_text(request: AnalyzeTextRequest):
         )
     try:
         response = client.responses.parse(
-            model="gpt-4o-mini",
+            model="gpt-4.1-mini",
             input=[
                 {
                     "role":"system",

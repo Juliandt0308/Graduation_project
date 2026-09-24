@@ -1,6 +1,7 @@
 function AnalysisSummary({ analysis }) {
-  const requiredTerms = analysis.required_search_terms ?? [];
-  const optionalTerms = analysis.optional_search_terms ?? [];
+  const primaryTerms = analysis.primary_anchor_terms ?? [];
+  const secondaryTerms = analysis.secondary_anchor_terms ?? [];
+  const optionalTerms = analysis.event_terms ?? [];
 
   return (
     <section className="result-section analysis-summary">
@@ -17,9 +18,9 @@ function AnalysisSummary({ analysis }) {
 
       <div className="search-term-groups">
         <div>
-          <h3>Required search terms</h3>
+          <h3>Primary Anchor terms</h3>
           <div className="term-list">
-            {requiredTerms.map((term) => (
+            {primaryTerms.map((term) => (
               <span className="term term-required" key={term}>
                 {term}
               </span>
@@ -28,7 +29,18 @@ function AnalysisSummary({ analysis }) {
         </div>
 
         <div>
-          <h3>Optional search terms</h3>
+          <h3>Secondary Anchor terms</h3>
+          <div className="term-list">
+            {secondaryTerms.map((term) => (
+              <span className="term term-required" key={term}>
+                {term}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <h3>Event terms</h3>
           <div className="term-list">
             {optionalTerms.map((term) => (
               <span className="term" key={term}>
