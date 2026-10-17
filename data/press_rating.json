@@ -1,0 +1,217 @@
+{
+    "version": "2026-10-16",
+    "source": "Media Bias / Fact Check",
+    "source_url": "mediabiasfactcheck.com",
+    "outlets":[
+        {
+            "id": "bbc",
+            "name": "BBC News",
+            "bias_point": 1.5,
+            "bias": "CENTRE",
+            "reliability_point": 2.1,
+            "reliability": "MOSTLY FACTUAL",
+            "credibility": "HIGH",
+            "domain": "bbc.co.uk"
+        },
+        {
+            "id": "guardian",
+            "name": "The Guardian",
+            "bias_point": -3.6,
+            "bias": "CENTRE LEFT",
+            "reliability_point": 1.8,
+            "reliability": "HIGH",
+            "credibility": "HIGH",
+            "domain": "theguardian.com"
+        },
+        {
+            "id": "thesun",
+            "name": "The Sun",
+            "bias_point": 6.6,
+            "bias": "RIGHT",
+            "reliability_point": 5.9,
+            "reliability": "MIXED",
+            "credibility": "MEDIUM",
+            "domain": "thesun.co.uk"
+        },
+        {
+            "id": "mirror",
+            "name": "The Daily Mirror",
+            "bias_point": -4.8,
+            "bias": "CENTRE LEFT",
+            "reliability_point": 6.0,
+            "reliability": "MIXED",
+            "credibility": "MEDIUM",
+            "domain": "mirror.co.uk"
+        },
+        {
+            "id": "independent",
+            "name": "The Independent",
+            "bias_point": -3.6,
+            "bias": "CENTRE LEFT",
+            "reliability_point": 5.8,
+            "reliability": "MIXED",
+            "credibility": "MEDIUM",
+            "domain": "independent.co.uk"
+        },
+        {
+            "id": "dailymail",
+            "name": "The Daily Mail",
+            "bias_point": 6.6,
+            "bias": "RIGHT",
+            "reliability_point": 7.1,
+            "reliability": "LOW",
+            "credibility": "LOW",
+            "domain": "dailymail.co.uk"
+        },
+        {
+            "id": "londoneconomic",
+            "name": "The London Economic",
+            "bias_point": -8.2,
+            "bias": "LEFT",
+            "reliability_point": 2.6,
+            "reliability": "MOSTLY FACTUAL",
+            "credibility": "HIGH",
+            "domain": "thelondoneconomic.com"
+        },
+        {
+            "id": "express",
+            "name": "The Daily Express",
+            "bias_point": 6.3,
+            "bias": "RIGHT",
+            "reliability_point": 5.5,
+            "reliability": "MIXED",
+            "credibility": "MEDIUM",
+            "domain": "express.co.uk"
+        },
+        {
+            "id": "skynews",
+            "name": "Sky News",
+            "bias_point": 1.0,
+            "bias": "CENTRE",
+            "reliability_point": 1.0,
+            "reliability": "HIGH",
+            "credibility": "HIGH",
+            "domain": "news.sky.com"
+        },    
+        {
+            "id": "telegraph",
+            "name": "The Telegraph",
+            "bias_point": 6.4,
+            "bias": "RIGHT",
+            "reliability_point": 4.9,
+            "reliability": "MIXED",
+            "credibility": "MEDIUM",
+            "domain": "telegraph.co.uk"
+        },
+        {
+            "id": "metro",
+            "name": "The Metro",
+            "bias_point": -3.7,
+            "bias": "CENTRE LEFT",
+            "reliability_point": 5.1,
+            "reliability": "MIXED",
+            "credibility": "MEDIUM",
+            "domain": "metro.co.uk"
+        },
+        {
+            "id": "thetimes",
+            "name": "The Times",
+            "bias_point": 3.4,
+            "bias": "CENTRE RIGHT",
+            "reliability_point": 1.7,
+            "reliability": "HIGH",
+            "credibility": "HIGH",
+            "domain": "thetimes.com"
+        },
+        {
+            "id": "standard",
+            "name": "London Evening Standard",
+            "bias_point": 3.9,
+            "bias": "CENTRE RIGHT",
+            "reliability_point": 2.4,
+            "reliability": "MOSTLY FACTUAL",
+            "credibility": "HIGH",
+            "domain": "standard.co.uk"
+        },
+        {
+            "id": "channel4",
+            "name": "Channel 4 News",
+            "bias_point": -3.9,
+            "bias": "CENTRE LEFT",
+            "reliability_point": 1.2,
+            "reliability": "HIGH",
+            "credibility": "HIGH",
+            "domain": "channel4.com"
+        },
+        {
+            "id": "dailystar",
+            "name": "The Daily Star",
+            "bias_point": 3.5,
+            "bias": "CENTRE RIGHT",
+            "reliability_point": 6.0,
+            "reliability": "MIXED",
+            "credibility": "LOW",
+            "domain": "dailystar.co.uk"
+        },
+        {
+            "id": "inews",
+            "name": "iNews",
+            "bias_point": -3.4,
+            "bias": "CENTRE LEFT",
+            "reliability_point": 1.1,
+            "reliability": "HIGH",
+            "credibility": "HIGH",
+            "domain": "inews.co.uk"
+        },    
+        {
+            "id": "gbnews",
+            "name": "GB News",
+            "bias_point": 7.9,
+            "bias": "RIGHT",
+            "reliability_point": 6.3,
+            "reliability": "MIXED",
+            "credibility": "LOW",
+            "domain": "gbnews.com"
+        },
+        {
+            "id": "economist",
+            "name": "The Economist",
+            "bias_point": 0.4,
+            "bias": "CENTRE",
+            "reliability_point": 0.8,
+            "reliability": "HIGH",
+            "credibility": "HIGH",
+            "domain": "economist.com"
+        },
+        {
+            "id": "financialtimes",
+            "name": "The Financial Times",
+            "bias_point": 0.4,
+            "bias": "CENTRE",
+            "reliability_point": 1.0,
+            "reliability": "HIGH",
+            "credibility": "HIGH",
+            "domain": "ft.com"
+        },       
+        {
+            "id": "reuters",
+            "name": "Reuters",
+            "bias_point": -0.5,
+            "bias": "CENTRE",
+            "reliability_point": 0.0,
+            "reliability": "HIGH",
+            "credibility": "HIGH",
+            "domain": "reuters.com"
+        },
+        {
+            "id": "canary",
+            "name": "The Canary",
+            "bias_point": -6.5,
+            "bias": "LEFT",
+            "reliability_point": 3.8,
+            "reliability": "MOSTLY FACTUAL",
+            "credibility": "MEDIUM",
+            "domain": "thecanary.co"
+        }
+    ]
+}
