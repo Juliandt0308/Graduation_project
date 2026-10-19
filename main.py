@@ -48,6 +48,8 @@ def analyze(file: UploadFile):
         claim=analysis_result.claim,
     )
 
+    coordinates = make_coordinates(cleaned_articles, classified)
+
     stance_counts = {
         "support" : 0,
         "partially_support" : 0,
@@ -66,4 +68,44 @@ def analyze(file: UploadFile):
         "articles": cleaned_articles,
         "classifications": classified,
         "stanceCounts": stance_counts,
+        "visualizationPoints": coordinates,
     }
+
+def make_coordinates(cleaned_articles: list[dict], classified) -> list[dict]:
+    articles_by_id = {
+        article["id"]: article
+        for article in cleaned_articles
+    }
+
+    coordinates = []
+
+    for result in classified.results:
+        if result.relevance != "relevant":
+            continue
+
+        article = articles_by_id.get(result.id)
+        if article is None:
+            continue
+
+        rating = article.get("pressRating")
+        if rating is None:
+            continue
+
+        coordinates.append(
+            {
+                "id": result.id,
+                "outletId": rating["outletId"],
+                "source": article["source"],
+                "title": article["title"],
+                "url": article["url"],
+                "stance": result.stance,
+                "confidence": result.confidence,
+                "bias": rating["bias"],
+                "reliability": rating["reliability"],
+                "credibility": rating["credibility"],
+                "biasPoint": rating["biasPoint"],
+                "reliabilityPoint": rating["reliabilityPoint"],
+            }
+        )
+
+    return coordinates

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import "./App.css";
 import AnalysisSummary from "./components/AnalysisSummary";
 import StanceSummary from "./components/StanceSummary";
+import SourceLandscape from "./components/SourceLandscape";
 import ArticleList from "./components/ArticleList";
 import OcrDetails from "./components/OcrDetails";
 
@@ -150,6 +151,10 @@ function App() {
 
             <StanceSummary counts={result.stanceCounts} />
           </div>
+
+          <SourceLandscape
+            points={result.visualizationPoints ?? []}
+          />
 
           <ArticleList
             articles={result.articles}
