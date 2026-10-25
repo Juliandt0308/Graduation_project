@@ -146,15 +146,13 @@ function App() {
 
       {result && (
         <div className="result-container">
-          <div className="overview-grid">
-            <AnalysisSummary analysis={result.analysis} />
-
-            <StanceSummary counts={result.stanceCounts} />
-          </div>
-
           <SourceLandscape
             points={result.visualizationPoints ?? []}
           />
+
+          <StanceSummary counts={result.stanceCounts} />
+
+          <AnalysisSummary analysis={result.analysis} />
 
           <ArticleList
             articles={result.articles}
