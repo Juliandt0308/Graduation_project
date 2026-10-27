@@ -5,6 +5,7 @@ import requests
 
 from news_search.gdelt_api import search_gdelt
 from news_search.guardian_api import search_guardian
+from news_search.independent_rss import search_independent_rss
 from news_search.news_api import (
     MAX_ARTICLES_PER_OUTLET,
     MAX_RETURNED_ARTICLES,
@@ -14,6 +15,7 @@ from news_search.news_api import (
     normalize_url,
     search_news,
 )
+from news_search.sky_rss import search_sky_rss
 
 
 MIN_ARTICLES_BEFORE_GDELT = 3
@@ -154,9 +156,10 @@ def search_all_sources(
 ) -> list[dict] | tuple[list[dict], dict]:
     """Search complementary providers and merge their normalized results.
 
-    NewsAPI and the Guardian are queried as primary sources. GDELT is used as
-    a single-request fallback only when their combined result set is too small
-    or concentrated in too few outlets.
+    NewsAPI, the Guardian API, and the Independent/Sky official RSS feeds are
+    queried as direct sources. GDELT is used as a single-request fallback only
+    when their combined result set is too small or concentrated in too few
+    outlets.
     """
     try:
         news_articles, news_diagnostics = search_news(
@@ -182,8 +185,46 @@ def search_all_sources(
         guardian_articles = []
         guardian_diagnostics = _failed_provider_diagnostics("guardian", error)
 
-    provider_batches = [news_articles, guardian_articles]
-    provider_diagnostics = [news_diagnostics, guardian_diagnostics]
+    try:
+        independent_articles, independent_diagnostics = search_independent_rss(
+            primary_anchor_terms,
+            secondary_anchor_terms,
+            event_terms,
+            key_figures,
+            include_diagnostics=True,
+        )
+    except (requests.RequestException, RuntimeError, ValueError) as error:
+        independent_articles = []
+        independent_diagnostics = _failed_provider_diagnostics(
+            "independent_rss",
+            error,
+        )
+
+    try:
+        sky_articles, sky_diagnostics = search_sky_rss(
+            primary_anchor_terms,
+            secondary_anchor_terms,
+            event_terms,
+            key_figures,
+            include_diagnostics=True,
+        )
+    except (requests.RequestException, RuntimeError, ValueError) as error:
+        sky_articles = []
+        sky_diagnostics = _failed_provider_diagnostics("sky_rss", error)
+
+    provider_batches = [
+        news_articles,
+        guardian_articles,
+        independent_articles,
+        sky_articles,
+    ]
+    provider_diagnostics = [
+        news_diagnostics,
+        guardian_diagnostics,
+        independent_diagnostics,
+        sky_diagnostics,
+    ]
+    direct_provider_count = len(provider_diagnostics)
     preliminary_articles, _ = merge_provider_articles(provider_batches)
     preliminary_outlets = _distinct_outlet_count(preliminary_articles)
 
@@ -237,13 +278,13 @@ def search_all_sources(
         "request_failed",
         "cooldown",
     }
-    primary_provider_statuses = [
+    direct_provider_statuses = [
         provider_diagnostic.get("status")
-        for provider_diagnostic in provider_diagnostics[:2]
+        for provider_diagnostic in provider_diagnostics[:direct_provider_count]
     ]
     search_unavailable = all(
         status in {"failed", "unavailable"}
-        for status in primary_provider_statuses
+        for status in direct_provider_statuses
     )
     provider_problem_count = sum(
         provider_diagnostic.get("status") in provider_problem_statuses

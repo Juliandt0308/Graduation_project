@@ -5,15 +5,25 @@ function displayValue(value) {
 }
 
 function displayProvider(provider) {
+  const providerLabels = {
+    newsapi: "NewsAPI",
+    guardian: "The Guardian API",
+    independent_rss: "The Independent RSS",
+    sky_rss: "Sky News RSS",
+    gdelt: "GDELT",
+  };
+
   if (Array.isArray(provider)) {
-    return provider.length > 0 ? provider.join(", ") : "—";
+    return provider.length > 0
+      ? provider.map((name) => providerLabels[name] ?? name).join(", ")
+      : "—";
   }
 
   if (provider && typeof provider === "object") {
     return Object.keys(provider).join(", ") || "—";
   }
 
-  return displayValue(provider);
+  return providerLabels[provider] ?? displayValue(provider);
 }
 
 function SearchDiagnostics({ diagnostics }) {
@@ -78,6 +88,8 @@ function SearchDiagnostics({ diagnostics }) {
               const status = provider?.status
                 ?? (provider?.configured === false ? "unavailable" : "completed");
               const issue = provider?.error ?? provider?.unavailableReason;
+              const isCurrentFeed = provider?.historicalSearch === false
+                || providerName.includes("RSS");
 
               return (
                 <div className="search-provider" key={`${providerName}-${index}`}>
@@ -88,6 +100,9 @@ function SearchDiagnostics({ diagnostics }) {
                   <p>
                     {displayValue(provider?.returnedArticles)} articles · {displayValue(provider?.requestCount)} requests
                   </p>
+                  {isCurrentFeed && (
+                    <p>Current feed only · no historical archive search</p>
+                  )}
                   {issue && <p className="search-stage-error">{issue}</p>}
                 </div>
               );
