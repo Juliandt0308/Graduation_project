@@ -386,6 +386,149 @@ summary:focus-visible {
   border-color: color-mix(in srgb, var(--primary) 24%, var(--border));
 }
 
+.search-diagnostics-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  margin: 0 0 22px;
+  overflow: hidden;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.search-diagnostics-summary div {
+  min-width: 0;
+  padding: 13px;
+  background: var(--surface-muted);
+}
+
+.search-diagnostics-summary dt {
+  margin-bottom: 4px;
+  color: var(--text);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.search-diagnostics-summary dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--text-strong);
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.search-provider-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  margin: 0 0 22px;
+}
+
+.search-provider {
+  padding: 13px 14px;
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+}
+
+.search-provider > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.search-provider strong {
+  color: var(--text-strong);
+  font-size: 13px;
+  text-transform: capitalize;
+}
+
+.search-provider span {
+  color: var(--text);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.search-provider > p:not(.search-stage-error) {
+  margin: 7px 0 0;
+  color: var(--text);
+  font-size: 11px;
+}
+
+.search-stage-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.search-stage {
+  padding: 13px 14px;
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+}
+
+.search-stage-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 8px;
+  color: var(--text);
+  font-size: 11px;
+}
+
+.search-stage-heading strong {
+  color: var(--text-strong);
+  font-size: 13px;
+}
+
+.search-stage-query {
+  display: block;
+  overflow-x: auto;
+  color: var(--primary);
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.search-stage-description {
+  margin: 0 0 7px;
+  color: var(--text);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.search-stage-error {
+  margin: 9px 0 0;
+  padding: 8px 10px;
+  color: var(--danger);
+  font-size: 11px;
+  line-height: 1.45;
+  background: var(--danger-soft);
+  border-radius: 7px;
+}
+
+.search-diagnostics-empty {
+  margin: 0;
+  padding: 24px 18px;
+  color: var(--text);
+  text-align: center;
+  background: var(--surface-muted);
+  border: 1px dashed var(--border-strong);
+  border-radius: 9px;
+}
+
 .stance-list {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -821,34 +964,11 @@ summary:focus-visible {
   border-radius: 10px;
 }
 
-.ocr-details {
-  padding: 0;
-  overflow: hidden;
-}
-
-.ocr-details summary {
-  padding: 22px 26px;
-  color: var(--text-strong);
-  font-size: 17px;
-  font-weight: 800;
-  cursor: pointer;
-  list-style-position: inside;
-}
-
-.ocr-details[open] summary {
-  border-bottom: 1px solid var(--border);
-}
-
-.ocr-details > :not(summary) {
-  margin-right: 26px;
-  margin-left: 26px;
-}
-
 .ocr-summary {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 1px;
-  margin-top: 24px;
+  margin-top: 0;
   overflow: hidden;
   background: var(--border);
   border: 1px solid var(--border);
@@ -888,7 +1008,7 @@ summary:focus-visible {
 }
 
 .ocr-lines {
-  margin-bottom: 26px;
+  margin-bottom: 0;
 }
 
 .ocr-lines ol {
@@ -1080,6 +1200,10 @@ summary:focus-visible {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .search-diagnostics-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .landscape-selection {
     grid-template-columns: 1fr;
   }
@@ -1121,8 +1245,7 @@ summary:focus-visible {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .article-section,
-  .ocr-details {
+  .article-section {
     padding: 0;
   }
 
@@ -1147,6 +1270,16 @@ summary:focus-visible {
 
   .ocr-summary {
     grid-template-columns: 1fr;
+  }
+
+  .search-diagnostics-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .search-stage-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
   }
 
   .source-landscape {

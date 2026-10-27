@@ -5,6 +5,7 @@ import StanceSummary from "./components/StanceSummary";
 import SourceLandscape from "./components/SourceLandscape";
 import ArticleList from "./components/ArticleList";
 import OcrDetails from "./components/OcrDetails";
+import SearchDiagnostics from "./components/SearchDiagnostics";
 
 function App() {
   const [backendConnected, setBackendConnected] = useState(false);
@@ -146,6 +147,13 @@ function App() {
 
       {result && (
         <div className="result-container">
+          {result.searchDiagnostics?.searchUnavailable && (
+            <p className="error-message" role="alert">
+              News search providers were unavailable. An empty article list
+              does not mean that no related coverage exists.
+            </p>
+          )}
+
           <SourceLandscape
             points={result.visualizationPoints ?? []}
           />
@@ -153,6 +161,8 @@ function App() {
           <StanceSummary counts={result.stanceCounts} />
 
           <AnalysisSummary analysis={result.analysis} />
+
+          <SearchDiagnostics diagnostics={result.searchDiagnostics} />
 
           <ArticleList
             articles={result.articles}
