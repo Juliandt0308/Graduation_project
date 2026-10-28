@@ -1,5 +1,6 @@
 import os
 from collections import Counter
+from concurrent.futures import ThreadPoolExecutor
 
 import requests
 
@@ -14,6 +15,14 @@ from news_search.news_api import (
     normalize_title,
     normalize_url,
     search_news,
+)
+from news_search.newsapi_ai import search_newsapi_ai
+from news_search.publisher_rss import (
+    search_channel4_rss,
+    search_dailystar_rss,
+    search_express_rss,
+    search_mirror_rss,
+    search_standard_rss,
 )
 from news_search.sky_rss import search_sky_rss
 
@@ -146,6 +155,26 @@ def _failed_provider_diagnostics(provider: str, error: Exception) -> dict:
     }
 
 
+def _run_provider_search(
+    provider_name: str,
+    provider_search,
+    primary_anchor_terms: list[str],
+    secondary_anchor_terms: list[str],
+    event_terms: list[str],
+    key_figures: list[str] | None,
+) -> tuple[list[dict], dict]:
+    try:
+        return provider_search(
+            primary_anchor_terms,
+            secondary_anchor_terms,
+            event_terms,
+            key_figures,
+            include_diagnostics=True,
+        )
+    except (requests.RequestException, RuntimeError, ValueError) as error:
+        return [], _failed_provider_diagnostics(provider_name, error)
+
+
 def search_all_sources(
     primary_anchor_terms: list[str],
     secondary_anchor_terms: list[str],
@@ -156,74 +185,43 @@ def search_all_sources(
 ) -> list[dict] | tuple[list[dict], dict]:
     """Search complementary providers and merge their normalized results.
 
-    NewsAPI, the Guardian API, and the Independent/Sky official RSS feeds are
-    queried as direct sources. GDELT is used as a single-request fallback only
-    when their combined result set is too small or concentrated in too few
-    outlets.
+    NewsAPI.org, NewsAPI.ai, the Guardian API, and official publisher RSS
+    feeds are queried as direct sources. GDELT is used as a single-request
+    fallback only when their combined result set is too small or concentrated
+    in too few outlets.
     """
-    try:
-        news_articles, news_diagnostics = search_news(
-            primary_anchor_terms,
-            secondary_anchor_terms,
-            event_terms,
-            key_figures,
-            include_diagnostics=True,
-        )
-    except (requests.RequestException, RuntimeError, ValueError) as error:
-        news_articles = []
-        news_diagnostics = _failed_provider_diagnostics("newsapi", error)
-
-    try:
-        guardian_articles, guardian_diagnostics = search_guardian(
-            primary_anchor_terms,
-            secondary_anchor_terms,
-            event_terms,
-            key_figures,
-            include_diagnostics=True,
-        )
-    except (requests.RequestException, RuntimeError, ValueError) as error:
-        guardian_articles = []
-        guardian_diagnostics = _failed_provider_diagnostics("guardian", error)
-
-    try:
-        independent_articles, independent_diagnostics = search_independent_rss(
-            primary_anchor_terms,
-            secondary_anchor_terms,
-            event_terms,
-            key_figures,
-            include_diagnostics=True,
-        )
-    except (requests.RequestException, RuntimeError, ValueError) as error:
-        independent_articles = []
-        independent_diagnostics = _failed_provider_diagnostics(
-            "independent_rss",
-            error,
-        )
-
-    try:
-        sky_articles, sky_diagnostics = search_sky_rss(
-            primary_anchor_terms,
-            secondary_anchor_terms,
-            event_terms,
-            key_figures,
-            include_diagnostics=True,
-        )
-    except (requests.RequestException, RuntimeError, ValueError) as error:
-        sky_articles = []
-        sky_diagnostics = _failed_provider_diagnostics("sky_rss", error)
-
-    provider_batches = [
-        news_articles,
-        guardian_articles,
-        independent_articles,
-        sky_articles,
+    direct_providers = [
+        ("newsapi", search_news),
+        ("newsapi_ai", search_newsapi_ai),
+        ("guardian", search_guardian),
+        ("independent_rss", search_independent_rss),
+        ("sky_rss", search_sky_rss),
+        ("channel4_rss", search_channel4_rss),
+        ("standard_rss", search_standard_rss),
+        ("mirror_rss", search_mirror_rss),
+        ("express_rss", search_express_rss),
+        ("dailystar_rss", search_dailystar_rss),
     ]
+    with ThreadPoolExecutor(max_workers=len(direct_providers)) as executor:
+        futures = [
+            executor.submit(
+                _run_provider_search,
+                provider_name,
+                provider_search,
+                primary_anchor_terms,
+                secondary_anchor_terms,
+                event_terms,
+                key_figures,
+            )
+            for provider_name, provider_search in direct_providers
+        ]
+        provider_results = [future.result() for future in futures]
+
+    provider_batches = [articles for articles, _ in provider_results]
     provider_diagnostics = [
-        news_diagnostics,
-        guardian_diagnostics,
-        independent_diagnostics,
-        sky_diagnostics,
+        diagnostics for _, diagnostics in provider_results
     ]
+
     direct_provider_count = len(provider_diagnostics)
     preliminary_articles, _ = merge_provider_articles(provider_batches)
     preliminary_outlets = _distinct_outlet_count(preliminary_articles)

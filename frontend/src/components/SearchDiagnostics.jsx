@@ -7,9 +7,15 @@ function displayValue(value) {
 function displayProvider(provider) {
   const providerLabels = {
     newsapi: "NewsAPI",
+    newsapi_ai: "NewsAPI.ai",
     guardian: "The Guardian API",
     independent_rss: "The Independent RSS",
     sky_rss: "Sky News RSS",
+    channel4_rss: "Channel 4 News RSS",
+    standard_rss: "The Standard RSS",
+    mirror_rss: "Daily Mirror RSS",
+    express_rss: "Daily Express RSS",
+    dailystar_rss: "Daily Star RSS",
     gdelt: "GDELT",
   };
 
@@ -49,7 +55,7 @@ function SearchDiagnostics({ diagnostics }) {
     ["Distinct outlets", displayValue(diagnostics?.distinctOutlets)],
     ["Per-outlet limit", displayValue(diagnostics?.perOutletLimit)],
     ["Overall limit", displayValue(diagnostics?.overallLimit)],
-    ["API requests", displayValue(diagnostics?.requestCount)],
+    ["Network requests", displayValue(diagnostics?.requestCount)],
     ["GDELT fallback", gdeltStatus],
   ];
 
