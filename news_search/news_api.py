@@ -48,6 +48,7 @@ MAX_ARTICLES_PER_OUTLET = 3
 MAX_RETURNED_ARTICLES = 18
 TARGET_ARTICLE_COUNT = 12
 TARGET_OUTLET_COUNT = 3
+PRIMARY_ONLY_FALLBACK_MAX_ARTICLES = 3
 MAX_PRIMARY_TERMS = 2
 MAX_SECONDARY_TERMS = 5
 MAX_EVENT_TERMS = 6
@@ -323,6 +324,17 @@ def build_query_plan(
     return query_plan[:MAX_QUERY_STAGES]
 
 
+def should_run_query_stage(
+    stage: dict,
+    collected_article_count: int,
+) -> bool:
+    """Keep the broad primary-only fallback for genuinely sparse searches."""
+    return not (
+        stage.get("stage") == "primary_only"
+        and collected_article_count > PRIMARY_ONLY_FALLBACK_MAX_ARTICLES
+    )
+
+
 def normalize_url(url: str) -> str:
     """Remove URL decoration that should not make one article look unique."""
     parts = urlsplit(url.strip())
@@ -513,6 +525,11 @@ def search_news(
     stop_reason = "query_plan_exhausted"
 
     for stage_index, stage in enumerate(query_plan):
+        if not should_run_query_stage(stage, len(collected_articles)):
+            stop_reason = "primary_only_skipped_sufficient_results"
+            stopped_early = True
+            break
+
         try:
             response = requests.get(
                 NEWS_API_URL,

@@ -14,6 +14,7 @@ from news_search.news_api import (
     find_press_rating,
     normalize_title,
     normalize_url,
+    should_run_query_stage,
 )
 
 
@@ -214,6 +215,11 @@ def search_guardian(
     provider_error = None
 
     for stage_index, stage in enumerate(query_plan):
+        if not should_run_query_stage(stage, len(collected_articles)):
+            stop_reason = "primary_only_skipped_sufficient_results"
+            stopped_early = True
+            break
+
         try:
             response = _guardian_request(
                 {

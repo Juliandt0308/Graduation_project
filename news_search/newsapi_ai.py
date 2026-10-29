@@ -28,6 +28,7 @@ from news_search.news_api import (
     normalize_title,
     normalize_url,
     outlets,
+    should_run_query_stage,
 )
 
 
@@ -37,7 +38,7 @@ load_dotenv(PROJECT_ROOT / ".env")
 NEWSAPI_AI_URL = "https://eventregistry.org/api/v1/article/getArticles"
 NEWSAPI_AI_LOOKBACK_DAYS = 31
 NEWSAPI_AI_PAGE_SIZE = 100
-NEWSAPI_AI_BODY_LENGTH = 1800
+NEWSAPI_AI_BODY_LENGTH = 4000
 NEWSAPI_AI_DESCRIPTION_LENGTH = 420
 
 # Event Registry indexes BBC coverage under both its public and feed
@@ -282,6 +283,11 @@ def search_newsapi_ai(
     provider_error = None
 
     for stage_index, stage in enumerate(query_plan):
+        if not should_run_query_stage(stage, len(collected_articles)):
+            stop_reason = "primary_only_skipped_sufficient_results"
+            stopped_early = True
+            break
+
         try:
             response = requests.post(
                 NEWSAPI_AI_URL,
