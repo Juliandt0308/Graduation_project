@@ -23,17 +23,10 @@ with press_rating_path.open("r", encoding="utf-8") as file:
 
 outlets = press_rating_data["outlets"]
 
-SEARCH_ONLY_DOMAINS = [
-    # ITV was part of the project's original UK outlet scope, but currently
-    # has no bias/reliability score in press_rating.json. It may still be
-    # retrieved and shown; it is simply omitted from the coordinate plot.
-    "itv.com",
-]
-
 target_domains = list(
     dict.fromkeys(
-        [outlet["domain"] for outlet in outlets]
-        + SEARCH_ONLY_DOMAINS
+        outlet["domain"]
+        for outlet in outlets
     )
 )
 

@@ -1,0 +1,16 @@
+# OCR 및 이미지 처리
+paddlepaddle==3.3.0
+paddleocr==3.7.0
+numpy==2.3.5
+opencv-contrib-python==4.10.0.84
+
+# FastAPI 백엔드
+fastapi==0.141.1
+uvicorn[standard]==0.52.4
+python-multipart==0.0.32
+pydantic==2.13.5
+
+# 외부 API 및 환경변수
+openai==3.10.0
+python-dotenv==1.2.3
+requests==2.34.2
