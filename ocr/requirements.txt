@@ -1,7 +1,3 @@
-paddlepaddle==3.3.0
-paddleocr==3.7.0
-fastapi==0.141.1
-uvicorn[standard]==0.52.4
-python-multipart==0.0.32
-numpy==2.3.5
-opencv-contrib-python==4.10.0.84
+# 이전 설치 명령과의 호환성을 위한 파일입니다.
+# 백엔드 의존성의 기준 파일은 프로젝트 루트의 requirements.txt입니다.
+-r ../requirements.txt

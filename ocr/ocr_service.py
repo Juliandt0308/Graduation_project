@@ -1,9 +1,10 @@
 import cv2
 import numpy as np
+import re
 
 from fastapi import HTTPException, UploadFile
 from paddleocr import PaddleOCR
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 from openai import OpenAI
 
@@ -25,11 +26,54 @@ class AnalyzeTextRequest(BaseModel):
 class TextAnalysis(BaseModel):
     corrected_text : str
     claim : str
-    primary_anchor_terms: list[str]
+    primary_anchor_terms: list[str] = Field(min_length=1, max_length=1)
     secondary_anchor_terms: list[str]
     event_terms: list[str]
     key_figures: list[str]
-    source_hints: list[str]
+
+
+def _normalized_label(value: str) -> str:
+    return re.sub(r"[^a-z0-9]", "", value.casefold())
+
+
+def _remove_explicit_source_metadata(text: str) -> str:
+    """Remove Source lines and a matching multi-line publisher logo."""
+    content_lines = []
+    source_labels = []
+
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+
+        source_match = re.match(
+            r"^source\b\s*(?:[|:\-–—]\s*)?(.*)$",
+            line,
+            flags=re.IGNORECASE,
+        )
+        if source_match:
+            source_label = source_match.group(1).strip()
+            if source_label:
+                source_labels.append(source_label)
+            continue
+
+        content_lines.append(line)
+
+    for source_label in source_labels:
+        normalized_source = _normalized_label(source_label)
+        accumulated_label = ""
+
+        for index, line in enumerate(content_lines[:4]):
+            accumulated_label += _normalized_label(line)
+
+            if accumulated_label == normalized_source:
+                content_lines = content_lines[index + 1:]
+                break
+
+            if not normalized_source.startswith(accumulated_label):
+                break
+
+    return "\n".join(content_lines)
 
 def recognize(file: UploadFile):
     allowed_types = {
@@ -43,7 +87,7 @@ def recognize(file: UploadFile):
             status_code=415,
             detail="Only JPEG, JPG, PNG, WEBP files are available",
         )
-    
+
     image_bytes = file.file.read()
     if not image_bytes:
         raise HTTPException(
@@ -121,7 +165,9 @@ system_prompt = """
 You normalize OCR text from an English social-media news card.
 
 Rules:
-- Correct only obvious OCR character errors using surrounding context.
+- Correct an OCR character error only when the surrounding context makes the
+  intended character unambiguous. Do not normalize an unfamiliar proper name
+  merely because another name looks more familiar.
 - Remove obvious account names, watermarks, and category labels.
 - Remove standalone headline labels such as LATEST, BREAKING, and EXCLUSIVE.
 - Preserve all meaningful numbers, percentages, dates, time periods,
@@ -134,14 +180,22 @@ Rules:
   not in the original OCR text.
 - Extract the claim using wording from the corrected text as closely as possible.
 - Prefer copying the central claim verbatim instead of paraphrasing it.
-- Include the main people, countries, or organizations.
-- Prefer common journalistic synonyms.
-- Avoid editorial wording from the social-media post.
+- Avoid editorial wording from the social-media post when generating search
+  terms.
+- Generate search fields for high-recall news retrieval, not as a grammatical
+  analysis of the sentence.
 - Generate exactly one primary anchor term.
-- Choose as the primary anchor the subject whose action, event, or state is
-  the central assertion of the claim's main clause.
-- Treat entities used for comparison, background, location, attribution, or
-  a subordinate clause as secondary anchors unless they are the main subject.
+- Choose the most discriminative searchable anchor in the claim: a specific
+  person, organization, political party, named location, or distinctive
+  concrete topic that is likely to appear in coverage of the same event.
+- Do not choose an anchor merely because it is the grammatical subject of the
+  claim. Choose the term that best distinguishes this story from unrelated
+  news.
+- Do not use a generic term such as UK, Britain, Britons, people, residents,
+  locals, government, police, or officials as the primary anchor when the
+  claim contains a more specific named entity or distinctive topic.
+- A complete named organization remains specific even when its name contains
+  an otherwise generic word such as police, council, or government.
 - For named people, organizations, political parties, countries, and
   locations, copy the entity wording from the corrected text exactly.
 - Do not expand, normalize, rename, or add descriptors to a named entity.
@@ -149,37 +203,66 @@ Rules:
   unless they are part of that entity in the corrected text.
 - Do not combine a named entity with an event word to create a primary
   anchor phrase.
-- Use a concrete topic phrase as a primary anchor only when no named entity
-  adequately identifies the subject.
+- Use a short concrete issue as the primary anchor when it is more useful for
+  retrieving the story than a generic person, country, or government label.
 - Each primary anchor term must be independently likely to appear in a news
   headline or article.
-- Put other people, organizations, countries, locations, or objects that
-  improve precision but may be omitted from a headline into
-  secondary_anchor_terms.
+- Put the other key named entities or concrete topics that are likely to
+  co-occur in coverage of the same event into secondary_anchor_terms.
+- Keep secondary anchors individually searchable. Do not join multiple
+  entities into one string.
 - Do not place the same concept in both primary_anchor_terms and
   secondary_anchor_terms.
-- Generate 2 to 6 event terms as short retrieval keywords or established
-  news-topic phrases.
-- Event terms must identify the central topic while remaining useful across
-  different journalistic wordings of the same event.
-- Include at least one core topic noun taken directly from the corrected
-  text, and add common journalistic synonyms as separate terms.
-- Do not use complete claims, clauses, conclusions, or source-specific
-  wording as event terms.
+- Generate 2 to 6 event terms as short literal topic phrases, action words,
+  or common headline variants that different outlets could use for the same
+  event.
+- Keep each event term short, normally one to three words. Prefer literal
+  action words, event nouns, and close headline variants over descriptive
+  phrases copied from the headline.
+- Include at least one concrete event or action word from the corrected text,
+  then add close headline variants as separate terms when useful.
+- Event terms must stay tied to what the card explicitly says. Do not infer
+  or invent broader categories, motives, industries, or consequences.
+- Do not replace a literal action with an inferred industry category, motive,
+  consequence, or type of commercial activity.
+- Do not use full claims, clauses, conclusions, long verb phrases, or
+  source-specific wording as event terms.
+- Remove unnecessary modifiers from event terms. Multiword terms must be
+  established topic phrases rather than fragments that only make sense when
+  copied exactly from the card.
 - Do not repeat primary or secondary anchor terms as event terms.
 - Do not use generic attribution words such as claim, statement, says, or
   announcement unless making the statement is itself the central event.
 - Do not write search terms as sentences.
-- Prefer synonyms commonly used in news headlines.
-- Use concrete nouns from the claim and common headline synonyms.
-- Put important figures(for example, 2%, 30 times, £1,000,000) related to the claim into key_figures.
+- Put every important number, percentage, date, time period, currency amount,
+  and other quantity related to the claim into key_figures.
+- Preserve the meaning and value of key figures exactly; do not invent, round,
+  weaken, strengthen, or omit them. Examples include 2%, 30 times,
+  £1,000,000, and 2029.
 - Restore missing spaces between concatenated English words when the
   intended word boundaries are clear from grammar and context.
-- Prefer inserting spaces over changing, deleting, or replacing recognised
-  characters.
+- When splitting a concatenated OCR token, preserve every recognised letter
+  in its original order. Insert spaces only; do not delete, replace, reorder,
+  or respell letters to create a more familiar word or name.
+- This spacing rule applies before any character correction. A later character
+  correction is allowed only when it independently satisfies the unambiguous
+  OCR-error rule above.
+- Do not insert a space inside an existing English word, surname,
+  organization name, or named project. Find word boundaries that preserve
+  recognizable complete words.
+- Treat plausible unfamiliar proper names as immutable. Never replace one
+  person's name with a better-known or similar-looking name.
+- Before returning, verify that each repaired concatenated token retains the
+  same letters as the OCR input after spaces and letter case are ignored.
 - Treat a short isolated all-caps token before the headline as a possible
   publisher logo or account label. Exclude it unless it is grammatically
   necessary to the headline.
+- Two or more short all-caps lines before the headline may together form one
+  publisher logo. Exclude the whole label, especially when the same words
+  appear in a later Source line.
+- Compare a Source attribution with consecutive leading tokens after ignoring
+  spaces, punctuation, and letter case. If they match, remove the complete
+  leading token sequence rather than attaching its final token to the title.
 - Treat lines beginning with "Source" as attribution, not as part of the
   corrected text or central claim.
 - A short isolated token on a separate line before the headline is usually
@@ -195,6 +278,7 @@ def analyze_text(request: AnalyzeTextRequest):
             detail="Text cannot be empty",
         )
     try:
+        text_for_analysis = _remove_explicit_source_metadata(request.text)
         response = client.responses.parse(
             model="gpt-4.1-mini",
             input=[
@@ -204,7 +288,7 @@ def analyze_text(request: AnalyzeTextRequest):
                 },
                 {
                     "role":"user",
-                    "content":request.text
+                    "content":text_for_analysis,
                 },
             ],
             text_format=TextAnalysis,

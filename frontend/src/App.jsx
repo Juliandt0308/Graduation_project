@@ -2,8 +2,10 @@ import { useEffect, useState } from "react";
 import "./App.css";
 import AnalysisSummary from "./components/AnalysisSummary";
 import StanceSummary from "./components/StanceSummary";
+import SourceLandscape from "./components/SourceLandscape";
 import ArticleList from "./components/ArticleList";
 import OcrDetails from "./components/OcrDetails";
+import SearchDiagnostics from "./components/SearchDiagnostics";
 
 function App() {
   const [backendConnected, setBackendConnected] = useState(false);
@@ -145,11 +147,22 @@ function App() {
 
       {result && (
         <div className="result-container">
-          <div className="overview-grid">
-            <AnalysisSummary analysis={result.analysis} />
+          {result.searchDiagnostics?.searchUnavailable && (
+            <p className="error-message" role="alert">
+              News search providers were unavailable. An empty article list
+              does not mean that no related coverage exists.
+            </p>
+          )}
 
-            <StanceSummary counts={result.stanceCounts} />
-          </div>
+          <SourceLandscape
+            points={result.visualizationPoints ?? []}
+          />
+
+          <StanceSummary counts={result.stanceCounts} />
+
+          <AnalysisSummary analysis={result.analysis} />
+
+          <SearchDiagnostics diagnostics={result.searchDiagnostics} />
 
           <ArticleList
             articles={result.articles}
